@@ -20,12 +20,14 @@ constraints at the type level.
 module Aim.Machine
        (
        -- * Architecture and Machine.
-         Arch, Machine(..)
+	 Arch, Machine(..)
        , Supports, Instruction(..), Instructions
        -- * Basic machine types
        -- $basicmachinetypes$
        , Type8Bits, Type16Bits, Type32Bits, Type64Bits, Type128Bits
-       , Register
+       -- * Additional Word & Int definitions
+       , Word128 (..), Int128 (..)
+       , Register, Stack
        , Operand (..)
        ) where
 
@@ -34,6 +36,8 @@ import Data.Text        ( Text                          )
 import Data.Word        ( Word8, Word16, Word32, Word64 )
 import Data.Int         ( Int8,  Int16,  Int32,  Int64  )
 
+data Word128 = Word128
+data Int128  = Int128
 
 class Arch arch
 
@@ -62,7 +66,6 @@ type Instructions machine = [Instruction machine]
 
 -- | Types that are essentially 8-bit quantities.
 class Type8Bits typ
-
 instance Type8Bits Word8; instance Type8Bits Int8
 
 -- | Types that are essentially 16-bit quantities.
@@ -79,6 +82,7 @@ instance Type64Bits Word64; instance Type64Bits Int64
 
 -- | Types that are essentially 128-bit quantities
 class Type128Bits typ
+instance Type128Bits Word128; instance Type128Bits Int128
 
 -- | Class that captures all possible operands. Operands have a type
 -- and they are usually suppored on a specific architecture. They also
@@ -97,8 +101,11 @@ class Arch (SupportedOn operand) => Operand operand where
   type MachineConstraint machine operand :: Constraint
 
   type MachineConstraint machine operand = ( Supports machine (Type operand)
-                                           , SupportedOn operand ~ ArchOf machine
-                                           )
+					   , SupportedOn operand ~ ArchOf machine
+					   )
 
 -- | Constraint that the given operand is a register.
-class Operand operand => Register operand
+class Operand operand => Register operand typ
+
+-- | Constraint that the given operand is a stack offset
+class Operand operand => Stack operand typ
